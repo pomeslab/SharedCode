@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-"""for git tutorial"""
+"""for git tutorial again"""
 
 import os
 import subprocess
