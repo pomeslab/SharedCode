@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+"""for git tutorial"""
+
 import os
 import subprocess
 import StringIO
