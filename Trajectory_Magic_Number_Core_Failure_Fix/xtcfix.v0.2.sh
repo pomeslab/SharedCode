@@ -48,10 +48,11 @@ fi
 
 # Print input info to the console
 input_info() {
-    echo "Current Time Inputs
+  echo "
+  Current Time Inputs
     (-b) beginning/start time: $inputB ps
     (-e) end time:             $inputE ps (recommended: approx $recE ps)"
-    echo ''
+  echo ''
 }
 
 # Check for integer + floats
@@ -73,7 +74,8 @@ homeMenu() {
   E      : enter end time (-e) in ps only (uses start time: $inputB ps).
   BE     : quickly enter beginning/start and end times (-b, -e) in ps. & No trjconv.
   S      : save the segment as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
-  C      : concatenate all parts (parts 1 to $((count-1))).
+  C      : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
+  Reset  : reset back to part 1 and delete old files created.
   Exit   : exit the program.
 
   Please select an option.
@@ -117,6 +119,7 @@ homeMenu() {
       input="${input,,}"
       case $input in
           n|no)
+            rm ${D}/part$count.$fileout
             echo "Staying on Part $count. Returning to home menu."
             homeMenu
           ;;
@@ -135,8 +138,8 @@ homeMenu() {
       cat ${D}/userinput.txt | column -t
 
       echo "
-      Would you like to concatenate all parts? (from part 1 to $((count-1))).
-      Options: [Y]/N
+Would you like to concatenate all parts? (from part 1 to $((count-1))).
+Options: [Y]/N
       "
       read inputC
       inputC="${inputC,,}"
@@ -145,7 +148,7 @@ homeMenu() {
           echo "Fine. I'm in pieces. Returning home."
           homeMenu
         ;;
-        yes|y)
+        yes|y|*)
           ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout.xtc
           echo "Life never looked brighter. Returning home."
           homeMenu
@@ -155,6 +158,13 @@ homeMenu() {
     exit) echo ''
       echo "Exiting the program. Good day to you too."
       exit
+    ;;
+    reset) echo ''
+      echo "Deleting files and reseting to Part 1"
+      rm -r ${D}
+      mkdir ${D}
+      count=1
+      homeMenu
     ;;
     *) echo ''
     echo "You have not entered in a valid option. Returning home."
@@ -200,12 +210,11 @@ taskRun() {
 }
 
 codeB() {
-  # Current Time Inputs
+  # Current Time inputs
   input_info
 
   # User Input
-  echo "Enter Beginning/Start Time (ps):
-  (no end time will be used.)"
+  echo "Enter Beginning/Start Time (ps): (no end time will be used.)"
   read inputB # Beg Time (ps)
   while ! [[ $inputB =~ $re ]]; do
       echo "[Beginning/Start Time] You have not enetered a positive number.
@@ -223,13 +232,11 @@ codeB() {
 }
 
 codeE() {
-  # Current Time Inputs
+  # Current Time inputs
   input_info
 
   # User Input
-  echo "Enter End Time (ps):
-  (the set beginning/start time will be used - default 0 ps if not entered previously.)"
-  read inputE # End Time (ps), uses previously set inputB
+  echo "Enter End Time (ps): (set beginning time of $inputB ps will be used.)"
   while ! [[ $inputE =~ $re ]]; do
       echo "[End Time] You have not enetered a positive number.
       Please try again."
