@@ -23,7 +23,7 @@
 
 # Parameters
 filein=$1 # input file
-fileout=$2 # output file
+fileout=${2:-segment.xtc} # output file
 count=${3:-1} # iteration number for part number (default value: 1)
 inputB=0 # Beginning/Start Time (ps)
 inputE=0 # End Time (ps)
@@ -66,13 +66,15 @@ homeMenu() {
   Input:  $filein
   Output: part$count.$fileout
 
-  B   : enter beginning/start time (-b) in ps only. No end time (-e) used.
-  E   : enter end time (-e) in ps only (uses start time: $inputB ps).
-  BE  : quickly enter beginning/start and end times (-b, -e) in ps. & No trjconv.
-  S   : save the segment as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
-  C   : concatenate all parts (parts 1 to $((count-1))) & exit.
+  Option : Description
+  B      : enter beginning/start time (-b) in ps only. No end time (-e) used.
+  E      : enter end time (-e) in ps only (uses start time: $inputB ps).
+  BE     : quickly enter beginning/start and end times (-b, -e) in ps. & No trjconv.
+  S      : save the segment as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
+  C      : concatenate all parts (parts 1 to $((count-1))).
+  Exit   : exit the program.
 
-  Options: B/E/BE/S/C/Exit
+  Please select an option.
   "
   read input
   input="${input,,}"
@@ -227,3 +229,5 @@ codeE() {
   # Information on the trjconv task performed (pass function name for repeat)
   postTask ${FUNCNAME[0]}
 }
+
+homeMenu
