@@ -11,9 +11,10 @@ Gromacs Wrapper for fixing a corrupt trajectories using trjconv. This script wil
 2. Change the prefix and suffix  under the "Version control of gromacs commands" to your own version if needed.
 
 ## Example:
-```./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]```
-
-```./xtcfix.sh md.xtc product.xtc```
+```
+./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]
+./xtcfix.sh md.xtc product.xtc
+```
 
 When using the program, test for start frames first with (B), then move onto end frames with (E). Once you've found the lower and upper bounds, save and continue to the next part.
 
