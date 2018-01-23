@@ -48,9 +48,9 @@ fi
 
 # Print input info to the console
 input_info() {
-    echo "Current Time Inputs "
-    echo "beginning/start time: $inputB ps"
-    echo "end time: $inputE ps (recommended: approx $recE ps)"
+    echo "Current Time Inputs
+    (-b) beginning/start time: $inputB ps
+    (-e) end time:             $inputE ps (recommended: approx $recE ps)"
     echo ''
 }
 
@@ -62,11 +62,13 @@ homeMenu() {
   echo ""
   echo "Segmenting trajectory: Part $count"
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+  input_info
   echo "
   Input:  $filein
   Output: part$count.$fileout
 
   Option : Description
+  ------------------------------------------------------------------------------
   B      : enter beginning/start time (-b) in ps only. No end time (-e) used.
   E      : enter end time (-e) in ps only (uses start time: $inputB ps).
   BE     : quickly enter beginning/start and end times (-b, -e) in ps. & No trjconv.
@@ -110,12 +112,12 @@ homeMenu() {
     s) echo ''
       # Save Trajectory (output to terminal)
       ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE
-      echo "Proceed to Part ${count}? Options: [Y]/N"
+      echo "Proceed to Part $((count+1))? Options: [Y]/N"
       read input
       input="${input,,}"
       case $input in
           n|no)
-            echo "Going back to Part $count. Returning to home menu."
+            echo "Staying on Part $count. Returning to home menu."
             homeMenu
           ;;
           y|yes|*)
@@ -127,7 +129,12 @@ homeMenu() {
       esac
     ;;
     c) echo ''
-      echo "Time to get your life back together. Con-cat-innate it!
+      echo "Time to get your life back together. Con-cat-innate it!"
+
+      echo "File / Beginning Time (ps) / End Time (ps)"
+      cat ${D}/userinput.txt | column -t
+
+      echo "
       Would you like to concatenate all parts? (from part 1 to $((count-1))).
       Options: [Y]/N
       "
@@ -155,12 +162,16 @@ homeMenu() {
   esac
 }
 
-postTask() {
+taskRun() {
   # Current Time inputs
   input_info
 
   # Output of the chosen task
-  echo "Output (below):"
+  echo ""
+  echo "Output Part 1 (below):"
+  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS  >& ${D}/temp.txt
+
+  echo "Output Part 2: end of file (below):"
   tail -n 10 ${D}/temp.txt
   echo ''
   cat rescue_temp/temp.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
@@ -202,11 +213,13 @@ codeB() {
       read inputB
   done
 
+  echo ""
+  echo "Output Part 1 (below):"
   # Segment Trajectory
-  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB >& ${D}/temp.txt
+  PARAMETERS="-b $inputB"
 
   # Information on the trjconv task performed (pass function name for repeat)
-  postTask ${FUNCNAME[0]}
+  taskRun ${FUNCNAME[0]}
 }
 
 codeE() {
@@ -224,10 +237,10 @@ codeE() {
   done
 
   # Segment Trajectory (use previously set -b)
-  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE >& ${D}/temp.txt
+  PARAMETERS="-b $inputB -e $inputE"
 
   # Information on the trjconv task performed (pass function name for repeat)
-  postTask ${FUNCNAME[0]}
+  taskRun ${FUNCNAME[0]}
 }
 
 homeMenu
