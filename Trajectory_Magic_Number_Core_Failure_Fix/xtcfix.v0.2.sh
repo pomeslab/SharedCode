@@ -21,13 +21,16 @@
 #
 # Written by: Richard Banh on January 16, 2018
 
+
+
 # Parameters
 filein=$1 # input file
-fileout=${2:-segment.xtc} # output file
+fileout=${2:-trajectory.xtc} # output file
 count=${3:-1} # iteration number for part number (default value: 1)
+if ! [[ $count =~ $re ]]; then
+  "Part Number must be an integer "
 inputB=0 # Beginning/Start Time (ps)
 inputE=0 # End Time (ps)
-value=0 # Time to add to inputB or inputE when PB or PE is called.
 recE=0 # recommendation for end frame (approximation)
 inputTemp=B
 
@@ -46,6 +49,10 @@ if [ ! -d ${D} ]; then
     mkdir ${D}
 fi
 
+
+# Check for integer + floats
+re='^[0-9]+([.][0-9]+)?$'
+
 # Print input info to the console
 input_info() {
   echo "
@@ -55,9 +62,6 @@ input_info() {
   echo ''
 }
 
-# Check for integer + floats
-re='^[0-9]+([.][0-9]+)?$'
-
 # Main function (home menu)
 homeMenu() {
   echo ""
@@ -66,14 +70,15 @@ homeMenu() {
   input_info
   echo "
   Input:  $filein
-  Output: part$count.$fileout
+  Output (part): part$count.$fileout
+  Output (combined): $fileout
 
   Option : Description
   ------------------------------------------------------------------------------
-  B      : enter beginning/start time (-b) in ps only. No end time (-e) used.
-  E      : enter end time (-e) in ps only (uses start time: $inputB ps).
-  BE     : quickly enter beginning/start and end times (-b, -e) in ps. & No trjconv.
-  S      : save the segment as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
+  B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
+  E      : (-e) enter end time in ps only (uses start time: $inputB ps).
+  BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
+  S      : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
   C      : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
   Reset  : reset back to part 1 and delete old files created.
   Exit   : exit the program.
@@ -178,10 +183,10 @@ taskRun() {
 
   # Output of the chosen task
   echo ""
-  echo "Output Part 1 (below):"
+  echo "Output 1/2 (below):"
   ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS  >& ${D}/temp.txt
 
-  echo "Output Part 2: end of file (below):"
+  echo "Output 2/2: end of file (below):"
   tail -n 10 ${D}/temp.txt
   echo ''
   cat rescue_temp/temp.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
@@ -222,8 +227,6 @@ codeB() {
       read inputB
   done
 
-  echo ""
-  echo "Output Part 1 (below):"
   # Segment Trajectory
   PARAMETERS="-b $inputB"
 
@@ -237,6 +240,7 @@ codeE() {
 
   # User Input
   echo "Enter End Time (ps): (set beginning time of $inputB ps will be used.)"
+  read inputE
   while ! [[ $inputE =~ $re ]]; do
       echo "[End Time] You have not enetered a positive number.
       Please try again."
