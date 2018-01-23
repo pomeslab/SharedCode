@@ -1,190 +1,269 @@
 #!/bin/bash
 
-# xtcfix.sh
 # Gromacs Trajectory Fix
-# Originally written in: GNU bash, version 4.1.2(1)-release (x86_64-redhat-linux-gnu)
+# Originally written in:
+# GNU bash, version 4.1.2(1)-release (x86_64-redhat-linux-gnu)
+# for Gromacs 4.6.7 (newer versions should work with little modification)
 #
 # Description:
-# This script will be useful if you have multiple magic numbers and/or core failures in your 
+# This script will be useful if you have multiple magic numbers and/or core failures in your
 # trajectory due to supercomputer failures/hiccups.
 #
 # File Preparation:
-# 1. Change the "Load Gromacs" section to your own version if needed. 
+# 1. Change the "Load Gromacs" section to your own version if needed.
 # 2. Change the prefix and suffix  under the "Version control of gromacs commands" to your own version if needed.
 #
 # Example:
 # ./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]
-# ./xtcfix.sh md.xtc segment.xtc 
+# ./xtcfix.sh md.xtc product.xtc
+#
+# When using the program, test for start frames first with (B), then move onto
+# end frames with (E). Once you've found the lower and upper bounds, save and
+# continue to the next part.
 #
 # Changelog:
-#
+# -- 01/23/2018 --
+# Restructured the code
+# Allowed B and E selections to be repeated consecutively.
+# Changed some prompts.
+# Added integer check for count number.
+# Added a reset feature.
 #
 # Written by: Richard Banh on January 16, 2018
-
-# Parameters
-filein=$1 # input file 
-fileout=$2 # output file 
-count=${3:-1} # iteration number for part number (default value: 1)
-inputB=0 # Beginning/Start Time (ps) 
-inputE=0 # End Time (ps)
-recE=0 # recommendation for end frame (approximation)
 
 # Load Gromacs
 module load intel64/15.3.187 openmpi/1.10.0_intel15 gromacs64/4.6.7_ompi
 
 # Version control of gromacs commands
-pf='' # prefix 
+pf='' # prefix
 sf='_mpi' # suffix
 
 # Name of temporary directory
-D=rescue_temp
+D=XTCFIX
+
+# Parameters
+filein=$1 # input file
+fileout=${2:-trajectory.xtc} # output file
+count=${3:-1} # iteration number for part number (default value: 1)
+inputB=0 # Beginning/Start Time (ps)
+inputE=0 # End Time (ps)
+recE=0 # recommendation for end frame (approximation)
+inputTemp=B
 
 # Create temporary working directory
 if [ ! -d ${D} ]; then
-    mkdir ${D} 
-fi 
+    mkdir ${D}
+fi
+
+# Check that the variable "count" is an integer
+re='^[0-9]+$'
+if ! [[ $count =~ $re ]] ; then
+   echo "error: The [part number] provided is not an integer"
+   exit
+fi
+
+# Check for integer + floats (-b and -e inputs)
+re='^[0-9]+([.][0-9]+)?$'
 
 # Print input info to the console
-input_info() {
-    echo "Current Time Inputs "
-    echo "beginning/start time: $inputB ps"
-    echo "end time: $inputE ps (recommended: approx $recE ps)"
-    echo ''
+inputInfo() {
+  echo "
+  Current Time Inputs
+    (-b) beginning/start time: $inputB ps
+    (-e) end time:             $inputE ps (recommended: approx $recE ps)"
+  echo ''
 }
 
-# Segment Trajectory
-re='^[0-9]+([.][0-9]+)?$' # Check for integer + floats 
-repeater() {
-    echo "Segmenting trajectory: Part $count"
-    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
-    echo "Your output file will be named part$count.$fileout"
-    echo ""
-    echo "Y (default) will prompt the user for a beginning/start and end time in ps."
-    echo "B will prompt the user for a beginning/start time in ps only."
-    echo "E will prompt the user for an end time in ps only (uses previously used start time: default 0).
-    (use previous beginning/start time entered - default of 0 ps before user input)"
-    echo "N will exit the program."
-    echo ""
-    echo "Options: [Y]/C/B/E/N"
+# Main function (home menu)
+homeMenu() {
+  echo ""
+  echo "Segmenting trajectory: Part $count"
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+  inputInfo
+  echo "
+  Input:  $filein
+  Output (part): part$count.$fileout
+  Output (combined): $fileout
 
-    read input
-    input="${input,,}"
-    case $input in
-      no|n)
-          exit # Exit program
-      ;;
-      e)
-          input_info # Current Time Inputs
-          # User Input
-          echo "Enter End Time (ps):
-          (the set beginning/start time will be used - default 0 ps if not entered previously.)"
-          read inputE # End Time (ps), uses previously set inputB
-          while ! [[ $inputE =~ $re ]]; do
-              echo "[End Time] You have not enetered a positive number.
-              Please try again."
-              read inputE
-          done
-          # Segment Trajectory
-          ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE >& ${D}/temp.txt
-      ;;
-      b)
-          input_info # Current Time Inputs
-          # User Input
-          echo "Enter Beginning/Start Time (ps):
-          (no end time will be used.)"
-          read inputB # Beg Time (ps)
-          while ! [[ $inputB =~ $re ]]; do
-              echo "[Beginning/Start Time] You have not enetered a positive number.
-              Please try again."
-              read inputB
-          done
-          # Segment Trajectory
-          ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB >& ${D}/temp.txt
-          echo ''
-      ;;
-      yes|y|*)
-          input_info # Current Time Inputs
-          # User Input
-          echo "Enter Beginning/Start Time (ps):"
-          read inputB # Beg Time (ps)
-          while ! [[ $inputB =~ $re ]]; do
-              echo "[Beginning/Start Time] You have not enetered a positive number.
-              Please try again."
-              read inputB
-          done
-          echo "Enter End Time (ps):"
-          read inputE # End Time (ps)
-          while ! [[ $inputE =~ $re ]]; do
-              echo "[End Time] You have not enetered a positive number.
-              Please try again."
-              read inputE
-          done
-          # Segment Trajectory
-          ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE >& ${D}/temp.txt
-      ;;
-  esac # End of Input Cases
-  echo ''
+  Option : Description
+  ------------------------------------------------------------------------------
+  B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
+  E      : (-e) enter end time in ps only (uses start time: $inputB ps).
+  BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
+  S      : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
+  C      : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
+  Reset  : reset back to part 1 and delete old files created.
+  Exit   : exit the program.
 
-  # Remind user of inputs (0 ps end time means no end time used.)
-  input_info # Print current input values
+  Please select an option.
+  "
+  read input
+  input="${input,,}"
+  case $input in
+    b) echo ''
+      codeB
+    ;;
+    e) echo ''
+      codeE
+    ;;
+    be) echo ''
+      # Current Time Inputs
+      inputInfo
+      # User Input
+      echo "Enter Beginning/Start Time (ps):"
+      read inputB # Beg Time (ps)
+      while ! [[ $inputB =~ $re ]]; do
+          echo "[Beginning/Start Time] You have not enetered a positive number.
+          Please try again."
+          read inputB
+      done
+      echo "Enter End Time (ps):"
+      read inputE # End Time (ps)
+      while ! [[ $inputE =~ $re ]]; do
+          echo "[End Time] You have not enetered a positive number.
+          Please try again."
+          read inputE
+      done
 
-  echo "Output (below):"
+      # Return to the home menu
+      homeMenu
+    ;;
+    s) echo ''
+      # Save Trajectory (output to terminal)
+      ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE
+      echo "Proceed to Part $((count+1))? Options: [Y]/N"
+      read input
+      input="${input,,}"
+      case $input in
+          n|no)
+            rm ${D}/part$count.$fileout
+            echo "Staying on Part $count. Returning to home menu."
+            homeMenu
+          ;;
+          y|yes|*)
+              echo part$count.$fileout $inputB $inputE >> ${D}/userinput.txt
+              let count++ # increase count by 1
+              echo "Going forward to Part $count. Returning to home menu."
+              homeMenu
+          ;;
+      esac
+    ;;
+    c) echo ''
+      echo "Time to get your life back together. Con-cat-innate it!"
+
+      echo "File / Beginning Time (ps) / End Time (ps)"
+      cat ${D}/userinput.txt | column -t
+
+      echo "
+Would you like to concatenate all parts? (from part 1 to $((count-1))).
+Options: [Y]/N
+      "
+      read inputC
+      inputC="${inputC,,}"
+      case $inputC in
+        no|n)
+          echo "Fine. I'm in pieces. Returning home."
+          homeMenu
+        ;;
+        yes|y|*)
+          ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout.xtc
+          echo "Life never looked brighter. Returning home."
+          homeMenu
+        ;;
+      esac
+    ;;
+    exit) echo ''
+      echo "Exiting the program. Good day to you too."
+      exit
+    ;;
+    reset) echo ''
+      echo "Deleting files and reseting to Part 1"
+      rm -r ${D}
+      mkdir ${D}
+      count=1
+      homeMenu
+    ;;
+    *) echo ''
+    echo "You have not entered in a valid option. Returning home."
+    homeMenu
+  esac
+}
+
+taskRun() {
+  # Current Time inputs
+  inputInfo
+
+  # Output of the chosen task
+  echo ""
+  echo "Output 1/2 (below):"
+  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS  >& ${D}/temp.txt
+
+  echo "Output 2/2: end of file (below):"
   tail -n 10 ${D}/temp.txt
   echo ''
-
   cat rescue_temp/temp.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
-
   echo "If no random message appears ABOVE, the time range should be ok."
   recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
 
-  # Check if the user is OK with the results
-  #######################################################
-  echo "Are you OK with the result? If not, the previous file will be removed
-  and you will be asked to segment the trajectory again.
-  (Note: Previous input values will not reset.)"
+  # Ask user if they wish to redo the task
+  echo "Do you wish to redo this task?"
   echo "Options: [Y]/N"
   read input
   input="${input,,}"
   case $input in
       n|no)
-          rm ${D}/part$count.$fileout
-          echo ""
-          repeater #recursive element
+        rm ${D}/part$count.$fileout
+        echo "Returning to the home menu."
+        printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+        echo ""
+        homeMenu
       ;;
       y|yes|*)
-          echo $count $inputB $inputE >> ${D}/userinput.txt
-          let count++ # increase count by 1
+        rm ${D}/part$count.$fileout
+        # Run the function provided as a parameter to this function
+        $1
       ;;
-  esac
-  echo "Do you wish to continue to the next iteration? Part $count."
-  echo "Options: [Y]/N"
-  read input
-  input="${input,,}"
-  case $input in
-      n|no)
-        echo 'Not continuing segmentation. Time to get your life back together.'
-        echo "Would you like to concatenate the segments? (from part 1 to $((count-1)))"
-        echo "Options: [Y]/N"
-
-        read inputC
-        inputC="${inputC,,}"
-        case $inputC in
-          no|n)
-            echo "The program is exiting."
-            exit
-          ;;
-          yes|y)
-            ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/concat.xtc
-
-            exit
-          ;;
-        esac
-
-      ;;
-      y|yes|*)
-          repeater
-      ;;
-  esac
+    esac
 }
 
-repeater
+codeB() {
+  # Current Time inputs
+  inputInfo
+
+  # User Input
+  echo "Enter Beginning/Start Time (ps): (no end time will be used.)"
+  read inputB
+  while ! [[ $inputB =~ $re ]]; do
+      echo "[Beginning/Start Time] You have not enetered a positive number.
+      Please try again."
+      read inputB
+  done
+
+  # Segment Trajectory
+  PARAMETERS="-b $inputB"
+
+  # Information on the trjconv task performed (pass function name for repeat)
+  taskRun ${FUNCNAME[0]}
+}
+
+codeE() {
+  # Current Time inputs
+  inputInfo
+
+  # User Input
+  echo "Enter End Time (ps): (set beginning time of $inputB ps will be used.)"
+  read inputE
+  while ! [[ $inputE =~ $re ]]; do
+      echo "[End Time] You have not enetered a positive number.
+      Please try again."
+      read inputE
+  done
+
+  # Segment Trajectory (use previously set -b)
+  PARAMETERS="-b $inputB -e $inputE"
+
+  # Information on the trjconv task performed (pass function name for repeat)
+  taskRun ${FUNCNAME[0]}
+}
+
+homeMenu
