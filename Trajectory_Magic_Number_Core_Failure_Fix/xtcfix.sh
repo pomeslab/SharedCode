@@ -81,8 +81,8 @@ homeMenu() {
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
   inputInfo
   echo "
-  Input:  $filein
-  Output (part): part$count.$fileout
+  Input            : $filein
+  Output (part)    : part$count.$fileout
   Output (combined): $fileout
 
   Option : Description
