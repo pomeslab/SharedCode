@@ -2,7 +2,9 @@
 
 # xtcfix.sh
 # Gromacs Trajectory Fix
-# Originally written in: GNU bash, version 4.1.2(1)-release (x86_64-redhat-linux-gnu)
+# Originally written in:
+# GNU bash, version 4.1.2(1)-release (x86_64-redhat-linux-gnu)
+# for Gromacs 4.6.7 (newer versions should work with little modification) 
 #
 # Description:
 # This script will be useful if you have multiple magic numbers and/or core failures in your
@@ -14,25 +16,21 @@
 #
 # Example:
 # ./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]
-# ./xtcfix.sh md.xtc segment.xtc
+# ./xtcfix.sh md.xtc product.xtc
+#
+# When using the program, test for start frames first with (B), then move onto
+# end frames with (E). Once you've found the lower and upper bounds, save and
+# continue to the next part.
 #
 # Changelog:
-#
+# -- 01/23/2018 --
+# Restructured the code
+# Allowed B and E selections to be repeated consecutively.
+# Changed some prompts.
+# Added integer check for count number.
+# Added a reset feature.
 #
 # Written by: Richard Banh on January 16, 2018
-
-
-
-# Parameters
-filein=$1 # input file
-fileout=${2:-trajectory.xtc} # output file
-count=${3:-1} # iteration number for part number (default value: 1)
-if ! [[ $count =~ $re ]]; then
-  "Part Number must be an integer "
-inputB=0 # Beginning/Start Time (ps)
-inputE=0 # End Time (ps)
-recE=0 # recommendation for end frame (approximation)
-inputTemp=B
 
 # Load Gromacs
 module load intel64/15.3.187 openmpi/1.10.0_intel15 gromacs64/4.6.7_ompi
@@ -44,17 +42,32 @@ sf='_mpi' # suffix
 # Name of temporary directory
 D=rescue_temp
 
+# Parameters
+filein=$1 # input file
+fileout=${2:-trajectory.xtc} # output file
+count=${3:-1} # iteration number for part number (default value: 1)
+inputB=0 # Beginning/Start Time (ps)
+inputE=0 # End Time (ps)
+recE=0 # recommendation for end frame (approximation)
+inputTemp=B
+
 # Create temporary working directory
 if [ ! -d ${D} ]; then
     mkdir ${D}
 fi
 
+# Check that the variable "count" is an integer
+re='^[0-9]+$'
+if ! [[ $yournumber =~ $re ]] ; then
+   echo "error: The [part number] provided is not an integer"
+   exit
+fi
 
-# Check for integer + floats
+# Check for integer + floats (-b and -e inputs)
 re='^[0-9]+([.][0-9]+)?$'
 
 # Print input info to the console
-input_info() {
+inputInfo() {
   echo "
   Current Time Inputs
     (-b) beginning/start time: $inputB ps
@@ -67,7 +80,7 @@ homeMenu() {
   echo ""
   echo "Segmenting trajectory: Part $count"
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
-  input_info
+  inputInfo
   echo "
   Input:  $filein
   Output (part): part$count.$fileout
@@ -96,7 +109,7 @@ homeMenu() {
     ;;
     be) echo ''
       # Current Time Inputs
-      input_info
+      inputInfo
       # User Input
       echo "Enter Beginning/Start Time (ps):"
       read inputB # Beg Time (ps)
@@ -179,7 +192,7 @@ Options: [Y]/N
 
 taskRun() {
   # Current Time inputs
-  input_info
+  inputInfo
 
   # Output of the chosen task
   echo ""
@@ -216,11 +229,11 @@ taskRun() {
 
 codeB() {
   # Current Time inputs
-  input_info
+  inputInfo
 
   # User Input
   echo "Enter Beginning/Start Time (ps): (no end time will be used.)"
-  read inputB # Beg Time (ps)
+  read inputB
   while ! [[ $inputB =~ $re ]]; do
       echo "[Beginning/Start Time] You have not enetered a positive number.
       Please try again."
@@ -236,7 +249,7 @@ codeB() {
 
 codeE() {
   # Current Time inputs
-  input_info
+  inputInfo
 
   # User Input
   echo "Enter End Time (ps): (set beginning time of $inputB ps will be used.)"
