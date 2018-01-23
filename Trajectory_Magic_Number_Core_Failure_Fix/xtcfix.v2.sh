@@ -4,7 +4,7 @@
 # Gromacs Trajectory Fix
 # Originally written in:
 # GNU bash, version 4.1.2(1)-release (x86_64-redhat-linux-gnu)
-# for Gromacs 4.6.7 (newer versions should work with little modification) 
+# for Gromacs 4.6.7 (newer versions should work with little modification)
 #
 # Description:
 # This script will be useful if you have multiple magic numbers and/or core failures in your
@@ -40,7 +40,7 @@ pf='' # prefix
 sf='_mpi' # suffix
 
 # Name of temporary directory
-D=rescue_temp
+D=XTCFIX
 
 # Parameters
 filein=$1 # input file
@@ -58,7 +58,7 @@ fi
 
 # Check that the variable "count" is an integer
 re='^[0-9]+$'
-if ! [[ $yournumber =~ $re ]] ; then
+if ! [[ $count =~ $re ]] ; then
    echo "error: The [part number] provided is not an integer"
    exit
 fi
