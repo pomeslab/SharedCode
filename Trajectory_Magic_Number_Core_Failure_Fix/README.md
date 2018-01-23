@@ -10,6 +10,15 @@ Gromacs Wrapper for fixing a corrupt trajectories using trjconv. This script wil
 1. Change the "Load Gromacs" section to your own version if needed.
 2. Change the prefix and suffix  under the "Version control of gromacs commands" to your own version if needed.
 
+```
+# Load Gromacs (load own version)
+module load intel64/15.3.187 openmpi/1.10.0_intel15 gromacs64/4.6.7_ompi
+
+# Version control of gromacs commands
+pf='' # prefix (e.g. gmx, gmx_mpi, etc...)
+sf='_mpi' # suffix (e.g. _s, _mpi, etc...)
+```
+
 ## Example:
 ```
 ./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]
