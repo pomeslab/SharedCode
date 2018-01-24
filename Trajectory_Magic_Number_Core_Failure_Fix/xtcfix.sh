@@ -22,12 +22,19 @@
 # continue to the next part.
 #
 # Changelog:
-# -- 01/23/2018 --
+# -- 01/23/2018 -- Richard Banh
 # Restructured the code
 # Allowed B and E selections to be repeated consecutively.
 # Changed some prompts.
 # Added integer check for count number.
 # Added a reset feature.
+#
+# -- 01/24/2018 -- Richard Banh
+# Included code to output ALL errors to a file and detect any magic number or
+#   core dump errors that occur. This is then used to provide the user
+#   recommendations on the next step.
+#
+#
 #
 # Written by: Richard Banh on January 16, 2018
 
@@ -195,16 +202,42 @@ taskRun() {
 
   # Output of the chosen task
   echo ""
-  echo "Output 1/2 (below):"
-  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS  >& ${D}/temp1.txt
-
-  echo "Output 2/2: end of file (below):"
+  bash -c "${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS; true" >& ${D}/temp 2> ${D}/temp1.txt
+  echo "Output: end of file (below):"
+  echo "----------------------------"
   tail -n 10 ${D}/temp1.txt
   echo ''
   cat ${D}/temp1.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
-  echo "If no random message appears ABOVE, the time range should be ok."
+  echo ''
+
+  # Count the number of errors
+  echo "Calculating errors ...
+  (looking for [core dumped, floating point exception, fatal error, magic number])"
+  numError=$(cat ${D}/temp1.txt | grep -i "floating point exception\|core dumped\|fatal error\|magic number" | wc -l)
+  if [ $numError -gt 0 ]; then
+    echo "Warning! Errors detected. It is recommended to re-enter your input."
+    echo "The following errors occured:"
+    echo "-----------------------------
+  Error Identifier         | Frequency
+  ----------------------------------------------
+  Floating Point Exception | $(cat ${D}/temp1.txt | grep -i "floating point exception" | wc -l)
+  Core Dumped              | $(cat ${D}/temp1.txt | grep -i "core dumped" | wc -l)
+  Fatal Error              | $(cat ${D}/temp1.txt | grep -i "fatal error" | wc -l)
+  Magic Number             | $(cat ${D}/temp1.txt | grep -i "magic number" | wc -l)
+    "
+  else
+    echo "No errors detected with this time range."
+  fi
+  echo ''
+
+  # Calculate recommended end time based on results
   recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
+
+  # Remove temporary files
   rm ${D}/temp1.txt ${D}/temp2.txt
+
+  # Remove file (only when user saves(S) is the file kept)
+  rm ${D}/part$count.$fileout
 
   # Ask user if they wish to redo the task
   echo "Do you wish to redo this task?"
@@ -213,14 +246,12 @@ taskRun() {
   input="${input,,}"
   case $input in
       n|no)
-        rm ${D}/part$count.$fileout
         echo "Returning to the home menu."
         printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
         echo ""
         homeMenu
       ;;
       y|yes|*)
-        rm ${D}/part$count.$fileout
         # Run the function provided as a parameter to this function
         $1
       ;;
