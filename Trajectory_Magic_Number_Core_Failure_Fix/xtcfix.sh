@@ -276,7 +276,9 @@ errorCheck() {
   rm ${D}/temp1.txt ${D}/temp2.txt
 
   # Remove file (only when user saves(S) is the file kept)
-  rm ${D}/part$count.$fileout
+  if [ -e ${D}/part$count.$fileout ]; then
+    rm ${D}/part$count.$fileout
+  fi
 }
 
 savePart() {
@@ -353,7 +355,7 @@ autoRun() {
   done
 
   # WHILE END TIME IS LESS THAN USER TRUE END TIME
-  while ! [ $inputE -ge $inputET ] ; do
+  while ! [ $inputE -ge $inputET ] && ! [ $inputB -le $inputET ] ; do
     # Look for no errors for start time
     while ! [ $numError -eq 0 ]; do
       # Check valid B (using +ts)
@@ -372,8 +374,8 @@ autoRun() {
     done
 
     inputInfo
-    # Look for errors for end time
-    while [ $numError -eq 0 ]; do
+    # Look for errors for end time (as long as end time is less than final end)
+    while [ $numError -eq 0 ] && ! [ $inputE -ge $inputET ]; do
       # Check valid E (using +ts)
       PARAMETERS="-b $(echo $inputE - $inputTS | bc) -e $inputE"
       taskRun # updates recE variable + obtain output files
@@ -396,6 +398,8 @@ autoRun() {
     # Set start time to end time + timestep
     inputB=$(echo $inputE + $inputTS | bc)
   done
+
+  homeMenu
 }
 
 homeMenu
