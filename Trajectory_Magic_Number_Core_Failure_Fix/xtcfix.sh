@@ -33,7 +33,7 @@
 # Included code to output ALL errors to a file and detect any magic number or
 #   core dump errors that occur. This is then used to provide the user
 #   recommendations on the next step.
-#
+# Added autorun function (provide timestep length and final end time)
 #
 #
 # Written by: Richard Banh on January 16, 2018
@@ -55,7 +55,7 @@ count=${3:-1} # iteration number for part number (default value: 1)
 inputB=0 # Beginning/Start Time (ps)
 inputE=0 # End Time (ps)
 recE=0 # recommendation for end frame (approximation)
-inputTemp=B
+numError=0 # starting value of the number of errors detected
 
 # Create temporary working directory
 if [ ! -d ${D} ]; then
@@ -70,7 +70,7 @@ if ! [[ $count =~ $re ]] ; then
 fi
 
 # Check for integer + floats (-b and -e inputs)
-re='^[0-9]+([.][0-9]+)?$'
+  re='^[0-9]+([.][0-9]+)?$'
 
 # Print input info to the console
 inputInfo() {
@@ -107,6 +107,9 @@ homeMenu() {
   read input
   input="${input,,}"
   case $input in
+    a) echo ''
+      autoRun
+    ;;
     b) echo ''
       codeB
     ;;
@@ -137,7 +140,8 @@ homeMenu() {
     ;;
     s) echo ''
       # Save Trajectory (output to terminal)
-      ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE
+      savePart
+
       echo "Proceed to Part $((count+1))? Options: [Y]/N"
       read input
       input="${input,,}"
@@ -156,28 +160,8 @@ homeMenu() {
       esac
     ;;
     c) echo ''
-      echo "Time to get your life back together. Con-cat-innate it!"
-
-      echo "File / Beginning Time (ps) / End Time (ps)"
-      cat ${D}/userinput.txt | column -t
-
-      echo "
-Would you like to concatenate all parts? (from part 1 to $((count-1))).
-Options: [Y]/N
-      "
-      read inputC
-      inputC="${inputC,,}"
-      case $inputC in
-        no|n)
-          echo "Fine. I'm in pieces. Returning home."
-          homeMenu
-        ;;
-        yes|y|*)
-          ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout.xtc
-          echo "Life never looked brighter. Returning home."
-          homeMenu
-        ;;
-      esac
+      # Concatenate the parts
+      concatParts
     ;;
     exit) echo ''
       echo "Exiting the program. Good day to you too."
@@ -196,48 +180,17 @@ Options: [Y]/N
   esac
 }
 
-taskRun() {
+taskMain() {
   # Current Time inputs
   inputInfo
 
-  # Output of the chosen task
-  echo ""
-  bash -c "${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS; true" >& ${D}/temp 2> ${D}/temp1.txt
-  echo "Output: end of file (below):"
-  echo "----------------------------"
-  tail -n 10 ${D}/temp1.txt
-  echo ''
-  cat ${D}/temp1.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
-  echo ''
+  # Run task (trjconv + recommender)
+  taskRun
 
-  # Count the number of errors
-  echo "Calculating errors ...
-  (looking for [core dumped, floating point exception, fatal error, magic number])"
-  numError=$(cat ${D}/temp1.txt | grep -i "floating point exception\|core dumped\|fatal error\|magic number" | wc -l)
-  if [ $numError -gt 0 ]; then
-    echo "Warning! Errors detected. It is recommended to re-enter your input."
-    echo "The following errors occured:"
-    echo "-----------------------------
-  Error Identifier         | Frequency
-  ----------------------------------------------
-  Floating Point Exception | $(cat ${D}/temp1.txt | grep -i "floating point exception" | wc -l)
-  Core Dumped              | $(cat ${D}/temp1.txt | grep -i "core dumped" | wc -l)
-  Fatal Error              | $(cat ${D}/temp1.txt | grep -i "fatal error" | wc -l)
-  Magic Number             | $(cat ${D}/temp1.txt | grep -i "magic number" | wc -l)
-    "
-  else
-    echo "No errors detected with this time range."
-  fi
-  echo ''
+  # Check for Errors (+delete temporary files)
+  errorCheck
 
-  # Calculate recommended end time based on results
-  recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
 
-  # Remove temporary files
-  rm ${D}/temp1.txt ${D}/temp2.txt
-
-  # Remove file (only when user saves(S) is the file kept)
-  rm ${D}/part$count.$fileout
 
   # Ask user if they wish to redo the task
   echo "Do you wish to redo this task?"
@@ -275,7 +228,7 @@ codeB() {
   PARAMETERS="-b $inputB"
 
   # Information on the trjconv task performed (pass function name for repeat)
-  taskRun ${FUNCNAME[0]}
+  taskMain ${FUNCNAME[0]}
 }
 
 codeE() {
@@ -295,7 +248,145 @@ codeE() {
   PARAMETERS="-b $inputB -e $inputE"
 
   # Information on the trjconv task performed (pass function name for repeat)
-  taskRun ${FUNCNAME[0]}
+  taskMain ${FUNCNAME[0]}
+}
+
+errorCheck() {
+  # Count the number of errors
+  echo "Calculating errors ...
+  (looking for [core dumped, floating point exception, fatal error, magic number])
+  "
+  numError=$(cat ${D}/temp1.txt | grep -i "floating point exception\|core dumped\|fatal error\|magic number" | wc -l)
+  if [ $numError -gt 0 ]; then
+    echo "Caution! Errors detected. It is recommended you check your time inputs."
+    #echo "
+    #Error Identifier         | Frequency
+    #----------------------------------------------
+    #Floating Point Exception | $(cat ${D}/temp1.txt | grep -i "floating point exception" | wc -l)
+    #Core Dumped              | $(cat ${D}/temp1.txt | grep -i "core dumped" | wc -l)
+    #Fatal Error              | $(cat ${D}/temp1.txt | grep -i "fatal error" | wc -l)
+    #Magic Number             | $(cat ${D}/temp1.txt | grep -i "magic number" | wc -l)
+    #"
+  else
+    echo "No errors detected with this time range."
+  fi
+  echo ''
+
+  # Remove temporary files
+  rm ${D}/temp1.txt ${D}/temp2.txt
+
+  # Remove file (only when user saves(S) is the file kept)
+  rm ${D}/part$count.$fileout
+}
+
+savePart() {
+  # Save Trajectory (output to terminal)
+  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout -b $inputB -e $inputE
+}
+
+concatParts() {
+  echo "Time to get your life back together. Con-cat-innate it!"
+  echo "File / Beginning Time (ps) / End Time (ps)"
+  cat ${D}/userinput.txt | column -t
+
+  echo "Would you like to concatenate all parts? (from part 1 to $((count-1)))."
+  echo "Options: [Y]/N"
+  read input
+  input="${input,,}"
+  case $input in
+    no|n)
+      echo "Fine. I'm in pieces. Returning home."
+      homeMenu
+    ;;
+    yes|y|*)
+      ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout.xtc
+      echo "Life never looked brighter. Returning home."
+      homeMenu
+    ;;
+  esac
+}
+
+taskRun() {
+  # Output of the chosen task
+  echo ""
+  bash -c "${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS; true" >& ${D}/temp 2> ${D}/temp1.txt
+  echo "Output: end of file (below):"
+  echo "----------------------------"
+  tail -n 10 ${D}/temp1.txt
+  echo ''
+  cat ${D}/temp1.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
+  echo ''
+
+  # Calculate recommended end time based on results
+  recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
+}
+
+autoRun() {
+  # 0. Ask user for timestep (integer) and true end time
+  inputB=0
+  inputE=0
+  numError=1
+  count=1
+
+  echo "Enter the length of one timestep (ps):"
+  read inputTS
+  while ! [[ $inputTS =~ $re ]]; do
+      echo "[Timestep] You have not enetered a positive number.
+      Please try again."
+      read inputTS
+  done
+
+  echo "Enter The Final End Time (ps):"
+  read inputET
+  while ! [[ $inputET =~ $re ]]; do
+      echo "[Final End Time] You have not enetered a positive number.
+      Please try again."
+      read inputET
+  done
+
+  # WHILE END TIME IS LESS THAN USER TRUE END TIME
+  while [ $inputE -ge $inputET ] ; do
+    # Look for no errors for start time
+    while ! [ $numError -eq 0 ]; do
+      # Check valid B (using +ts)
+      PARAMETERS="-b $inputB -e $(echo inputB inputTS | awk '{print $1 + $2}')"
+      taskRun # updates recE variable
+      errorCheck # updates numError variable
+
+      if [ $numError -eq 0 ]; then
+        PARAMETERS="-b $inputB"
+        taskRun # obtain recommended end time
+        inputE=$recE # set end time to recommended value
+      else
+        # Update start time by adding user provided timestep
+        inputB=$(echo inputB inputTS | awk '{print $1 + $2}')
+      fi
+    done
+
+    # Look for errors for end time
+    while [ $numError -eq 0 ]; do
+      # Check valid E (using +ts)
+      PARAMETERS="-b $(echo inputE inputTS | awk '{print $1 - $2}') -e $inputE"
+      taskRun # updates recE variable + obtain output files
+      errorCheck # updates numError variable
+
+      if [ $numError -eq 0 ]; then
+        # Update end time by adding user provided timestep
+        inputE=$(echo inputE inputTS | awk '{print $1 + $2}')
+      else
+        # Go back one timestep to an end time that worked without errors.
+        inputE=$(echo inputE inputTS | awk '{print $1 - $2}')
+      fi
+    done
+
+    # Save this part using solved start and end times
+    savePart
+    echo part$count.$fileout $inputB $inputE >> ${D}/userinput.txt
+    # Add one to count for the next part
+    let count++
+    # Set start time to end time + timestep
+    inputB=$(inputE inputTS | awk '{print $1 + $2}')
+  done
 }
 
 homeMenu
