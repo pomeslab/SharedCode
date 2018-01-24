@@ -170,6 +170,7 @@ homeMenu() {
     ;;
     reset) echo ''
       resetFix
+      homeMenu
     ;;
     *) echo ''
       echo "You have not entered in a valid option. Returning home."
@@ -183,7 +184,6 @@ resetFix() {
   rm -r ${D}
   mkdir ${D}
   count=1
-  homeMenu
 }
 
 taskMain() {
