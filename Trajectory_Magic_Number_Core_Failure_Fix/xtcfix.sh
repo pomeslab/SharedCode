@@ -318,7 +318,15 @@ taskRun() {
   echo ''
 
   # Calculate recommended end time based on results
-  recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
+
+  IFS=' ' read -r -a array <<< $(cat ${D}/temp2.txt -A)
+  #recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
+  for i in $(seq ${#array[@]} -1 0); do
+    if [ ${array[$i]} == 'time' ]; then
+      recE=${array[$(( i + 1 ))]}
+      break
+    fi
+  done 2> /dev/null
 }
 
 autoRun() {
@@ -363,6 +371,7 @@ autoRun() {
       fi
     done
 
+    inputInfo
     # Look for errors for end time
     while [ $numError -eq 0 ]; do
       # Check valid E (using +ts)
