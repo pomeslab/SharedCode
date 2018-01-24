@@ -169,16 +169,21 @@ homeMenu() {
       exit
     ;;
     reset) echo ''
-      echo "Deleting files and reseting to Part 1"
-      rm -r ${D}
-      mkdir ${D}
-      count=1
-      homeMenu
+      resetFix
     ;;
     *) echo ''
-    echo "You have not entered in a valid option. Returning home."
-    homeMenu
+      echo "You have not entered in a valid option. Returning home."
+      homeMenu
+    ;;
   esac
+}
+
+resetFix() {
+  echo "Deleting files and reseting to Part 1"
+  rm -r ${D}
+  mkdir ${D}
+  count=1
+  homeMenu
 }
 
 taskMain() {
@@ -191,24 +196,22 @@ taskMain() {
   # Check for Errors (+delete temporary files)
   errorCheck
 
-
-
   # Ask user if they wish to redo the task
   echo "Do you wish to redo this task?"
   echo "Options: [Y]/N"
   read input
   input="${input,,}"
   case $input in
-      n|no)
-        echo "Returning to the home menu."
-        printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
-        echo ""
-        homeMenu
-      ;;
-      y|yes|*)
-        # Run the function provided as a parameter to this function
-        $1
-      ;;
+    n|no)
+      echo "Returning to the home menu."
+      printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+      echo ""
+      homeMenu
+    ;;
+    y|yes|*)
+      # Run the function provided as a parameter to this function
+      $1
+    ;;
     esac
 }
 
@@ -334,11 +337,13 @@ taskRun() {
 }
 
 autoRun() {
+  # Reset Fix directory (count=1, no files)
+  resetFix
+
   # 0. Ask user for timestep (integer) and true end time
   inputB=0
   inputE=0
   numError=1
-  count=1
 
   echo "Enter the length of one timestep (ps):"
   read inputTS
