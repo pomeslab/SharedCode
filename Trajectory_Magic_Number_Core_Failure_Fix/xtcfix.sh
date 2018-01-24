@@ -349,7 +349,7 @@ autoRun() {
     # Look for no errors for start time
     while ! [ $numError -eq 0 ]; do
       # Check valid B (using +ts)
-      PARAMETERS="-b $inputB -e $(echo inputB + inputTS | bc)"
+      PARAMETERS="-b $inputB -e $(echo $inputB + $inputTS | bc)"
       taskRun # updates recE variable
       errorCheck # updates numError variable
 
@@ -359,23 +359,23 @@ autoRun() {
         inputE=$recE # set end time to recommended value
       else
         # Update start time by adding user provided timestep
-        inputB=$(echo inputB + inputTS | bc)
+        inputB=$(echo $inputB + $inputTS | bc)
       fi
     done
 
     # Look for errors for end time
     while [ $numError -eq 0 ]; do
       # Check valid E (using +ts)
-      PARAMETERS="-b $(echo inputE - inputTS | bc) -e $inputE"
+      PARAMETERS="-b $(echo $inputE - $inputTS | bc) -e $inputE"
       taskRun # updates recE variable + obtain output files
       errorCheck # updates numError variable
 
       if [ $numError -eq 0 ]; then
         # Update end time by adding user provided timestep
-        inputE=$(echo inputE + inputTS | bc)
+        inputE=$(echo $inputE + $inputTS | bc)
       else
         # Go back one timestep to an end time that worked without errors.
-        inputE=$(echo inputE - inputTS | bc)
+        inputE=$(echo $inputE - $inputTS | bc)
       fi
     done
 
@@ -385,7 +385,7 @@ autoRun() {
     # Add one to count for the next part
     let count++
     # Set start time to end time + timestep
-    inputB=$(inputE inputTS | awk '{print $1 + $2}')
+    inputB=$(echo $inputE + $inputTS | bc)
   done
 }
 
