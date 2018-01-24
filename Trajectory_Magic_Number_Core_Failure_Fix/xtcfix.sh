@@ -196,14 +196,15 @@ taskRun() {
   # Output of the chosen task
   echo ""
   echo "Output 1/2 (below):"
-  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS  >& ${D}/temp.txt
+  ${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS  >& ${D}/temp1.txt
 
   echo "Output 2/2: end of file (below):"
-  tail -n 10 ${D}/temp.txt
+  tail -n 10 ${D}/temp1.txt
   echo ''
-  cat rescue_temp/temp.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
+  cat ${D}/temp1.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
   echo "If no random message appears ABOVE, the time range should be ok."
   recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
+  rm temp1.txt temp2.txt
 
   # Ask user if they wish to redo the task
   echo "Do you wish to redo this task?"
