@@ -94,6 +94,7 @@ homeMenu() {
 
   Option : Description
   ------------------------------------------------------------------------------
+  A      : automatically make all parts using valid times and concatenate them.
   B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
   E      : (-e) enter end time in ps only (uses start time: $inputB ps).
   BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
@@ -361,11 +362,11 @@ autoRun() {
     while ! [ $numError -eq 0 ]; do
       # Check valid B (using +ts)
       PARAMETERS="-b $inputB -e $(echo $inputB + $inputTS | bc)"
-      taskRun 2> /dev/null # updates recE variable
-      errorCheck 2> /dev/null # updates numError variable
+      taskRun &> /dev/null # updates recE variable
+      errorCheck &> /dev/null # updates numError variable
       if [ $numError -eq 0 ]; then
         PARAMETERS="-b $inputB"
-        taskRun # obtain recommended end time
+        taskRun &> /dev/null # obtain recommended end time
         inputE=$recE # set end time to recommended value
       else
         # Update start time by adding user provided timestep
@@ -379,8 +380,8 @@ autoRun() {
     while [ $numError -eq 0 ] && [ $(echo "$inputE < $inputET" | bc) -ne 0 ]; do
       # Check valid E (using +ts)
       PARAMETERS="-b $(echo $inputE - $inputTS | bc) -e $inputE"
-      taskRun 2> /dev/null # updates recE variable + obtain output files
-      errorCheck 2> /dev/null # updates numError variable
+      taskRun &> /dev/null # updates recE variable + obtain output files
+      errorCheck &> /dev/null # updates numError variable
       if [ $numError -eq 0 ]; then
         # Update end time by adding user provided timestep
         inputE=$(echo $inputE + $inputTS | bc)
@@ -390,8 +391,10 @@ autoRun() {
       fi
     done
 
+    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
     inputInfo
-    
+    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+
     # Save this part using solved start and end times
     savePart
     echo part$count.$fileout $inputB $inputE >> ${D}/userinput.txt
@@ -401,6 +404,10 @@ autoRun() {
     inputB=$(echo $inputE + $inputTS | bc)
   done
 
+  # Concatenate Parts
+  concatParts
+
+  # Return to home menu
   homeMenu
 }
 
