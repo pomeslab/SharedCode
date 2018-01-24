@@ -287,6 +287,7 @@ savePart() {
 }
 
 concatParts() {
+  echo ''
   echo "Time to get your life back together. Con-cat-innate it!"
   echo "File / Beginning Time (ps) / End Time (ps)"
   cat ${D}/userinput.txt | column -t
@@ -355,14 +356,13 @@ autoRun() {
   done
 
   # WHILE END TIME IS LESS THAN USER TRUE END TIME
-  while ! [ $inputE -ge $inputET ] && ! [ $inputB -le $inputET ] ; do
+  while [ $(echo "$inputE < $inputET" | bc) -ne 0 ] ; do
     # Look for no errors for start time
     while ! [ $numError -eq 0 ]; do
       # Check valid B (using +ts)
       PARAMETERS="-b $inputB -e $(echo $inputB + $inputTS | bc)"
       taskRun # updates recE variable
       errorCheck # updates numError variable
-
       if [ $numError -eq 0 ]; then
         PARAMETERS="-b $inputB"
         taskRun # obtain recommended end time
@@ -373,14 +373,14 @@ autoRun() {
       fi
     done
 
-    inputInfo
+    #inputInfo
+
     # Look for errors for end time (as long as end time is less than final end)
-    while [ $numError -eq 0 ] && ! [ $inputE -ge $inputET ]; do
+    while [ $numError -eq 0 ] && [ $(echo "$inputE < $inputET" | bc) -ne 0 ]; do
       # Check valid E (using +ts)
       PARAMETERS="-b $(echo $inputE - $inputTS | bc) -e $inputE"
       taskRun # updates recE variable + obtain output files
       errorCheck # updates numError variable
-
       if [ $numError -eq 0 ]; then
         # Update end time by adding user provided timestep
         inputE=$(echo $inputE + $inputTS | bc)
