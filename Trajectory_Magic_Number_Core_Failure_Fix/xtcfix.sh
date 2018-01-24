@@ -204,7 +204,7 @@ taskRun() {
   cat ${D}/temp1.txt | grep "frame" | tail -n 1 >& ${D}/temp2.txt
   echo "If no random message appears ABOVE, the time range should be ok."
   recE=$(tail ${D}/temp2.txt -n 1 | awk '{print $(NF-1)}')
-  rm temp1.txt temp2.txt
+  rm ${D}/temp1.txt ${D}/temp2.txt
 
   # Ask user if they wish to redo the task
   echo "Do you wish to redo this task?"
