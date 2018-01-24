@@ -361,8 +361,8 @@ autoRun() {
     while ! [ $numError -eq 0 ]; do
       # Check valid B (using +ts)
       PARAMETERS="-b $inputB -e $(echo $inputB + $inputTS | bc)"
-      taskRun # updates recE variable
-      errorCheck # updates numError variable
+      taskRun 2> /dev/null # updates recE variable
+      errorCheck 2> /dev/null # updates numError variable
       if [ $numError -eq 0 ]; then
         PARAMETERS="-b $inputB"
         taskRun # obtain recommended end time
@@ -379,8 +379,8 @@ autoRun() {
     while [ $numError -eq 0 ] && [ $(echo "$inputE < $inputET" | bc) -ne 0 ]; do
       # Check valid E (using +ts)
       PARAMETERS="-b $(echo $inputE - $inputTS | bc) -e $inputE"
-      taskRun # updates recE variable + obtain output files
-      errorCheck # updates numError variable
+      taskRun 2> /dev/null # updates recE variable + obtain output files
+      errorCheck 2> /dev/null # updates numError variable
       if [ $numError -eq 0 ]; then
         # Update end time by adding user provided timestep
         inputE=$(echo $inputE + $inputTS | bc)
@@ -390,6 +390,8 @@ autoRun() {
       fi
     done
 
+    inputInfo
+    
     # Save this part using solved start and end times
     savePart
     echo part$count.$fileout $inputB $inputE >> ${D}/userinput.txt
