@@ -293,9 +293,12 @@ savePart() {
 concatParts() {
   echo ''
   echo "Time to get your life back together. Con-cat-innate it!"
+  echo ''
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
   echo "File / Beginning Time (ps) / End Time (ps)"
   cat ${D}/userinput.txt | column -t
-
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+  echo ''
   echo "Would you like to concatenate all parts? (from part 1 to $((count-1)))."
   echo "Options: [Y]/N"
   read input
