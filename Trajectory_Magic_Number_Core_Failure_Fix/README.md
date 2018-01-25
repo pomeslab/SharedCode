@@ -23,9 +23,23 @@ sf='_mpi' # suffix (e.g. _s, _mpi, etc...)
 ```
 ./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]
 ./xtcfix.sh md.xtc product.xtc
-```
 
+  Option : Description
+  ------------------------------------------------------------------------------
+  A      : automatically make all parts using valid times and concatenate them.
+  B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
+  E      : (-e) enter end time in ps only (uses start time: $inputB ps).
+  BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
+  S      : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
+  C      : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
+  Reset  : reset back to part 1 and delete old files created.
+  Exit   : exit the program.
+  Please select an option.
+  
+```
 When using the program, test for start frames first with (B), then move onto end frames with (E). Once you've found the lower and upper bounds, save and continue to the next part.
+
+**Update!!** Alternatively, you may use option (A) to automate this process.
 
 ## Changelog:
 -- 01/23/2018 --
