@@ -43,15 +43,14 @@ When using the program, test for start frames first with (B), then move onto end
 
 ## Changelog:
 -- 01/23/2018 --
+1. Restructured the code.
+2. Allowed B and E selections to be repeated consecutively.
+3. Changed some prompts.
+4. Added integer check for count number.
+5. Added a reset feature.
 
-Restructured the code.
-
-Allowed B and E selections to be repeated consecutively.
-
-Changed some prompts.
-
-Added integer check for count number.
-
-Added a reset feature.
+-- 01/24/2018 -- Richard Banh
+1. Included code to output ALL errors to a file and detect any magic number or core dump errors that occur. This is then used to provide the user recommendations on the next step.
+2. Added autorun function (provide timestep length and final end time)
 
 #### Written by: Richard Banh on January 16, 2018
