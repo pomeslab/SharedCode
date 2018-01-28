@@ -94,7 +94,7 @@ homeMenu() {
 
   Option : Description
   ------------------------------------------------------------------------------
-  A      : automatically make all parts using valid times and concatenate them.
+  A      : automatically make all parts using valid times and prompt concatenation.
   B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
   E      : (-e) enter end time in ps only (uses start time: $inputB ps).
   BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
