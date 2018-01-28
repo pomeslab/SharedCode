@@ -403,13 +403,17 @@ autoRun() {
     inputInfo
     printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 
-    # Save this part using solved start and end times
-    savePart
-    echo part$count.$fileout $inputB $inputE >> ${D}/userinput.txt
-    # Add one to count for the next part
-    let count++
-    # Set start time to end time + timestep
-    inputB=$(echo $inputE + $inputTS | bc)
+    if [ $(echo "$inputB < $inputET" | bc) -eq 1 ]; then
+      # Save this part using solved start and end times
+      savePart
+      echo part$count.$fileout $inputB $inputE >> ${D}/userinput.txt
+      # Add one to count for the next part
+      let count++
+      # Set start time to end time + timestep
+      inputB=$(echo $inputE + $inputTS | bc)
+    fi
+
+
   done
 
   # Concatenate Parts
