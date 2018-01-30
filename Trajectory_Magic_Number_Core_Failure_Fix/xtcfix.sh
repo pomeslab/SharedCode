@@ -94,7 +94,6 @@ inputE=0 # End Time (ps)
 recE=0 # recommendation for end frame (approximation)
 numError=0 # starting value of the number of errors detected
 
-
 # Check for input trajectory file; exit if not found
 if [ $filein == false ]; then
   echo "error: No [input trajectory] provided. (-f)"
@@ -154,7 +153,7 @@ homeMenu() {
 
   Option : Description
   ------------------------------------------------------------------------------
-  A            : automatically make all parts using valid times and prompt concatenation.
+  A            : auto make all parts using valid times, concatenate, then exit
   B            : (-b) enter beginning/start time in ps only. No end time (-e) used.
   E            : (-e) enter end time in ps only (uses start time: $inputB ps).
   BE           : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
@@ -223,6 +222,7 @@ homeMenu() {
     c) echo ''
       # Concatenate the parts
       concatParts
+      homeMenu
     ;;
     q|exit|quit) echo ''
       echo "Exiting the program. Good day to you too."
@@ -365,13 +365,11 @@ concatParts() {
   input="${input,,}"
   case $input in
     no|n)
-      echo "Fine. I'm in pieces. Returning home."
-      homeMenu
+      echo "Fine. I'm in pieces. Why bother breaking my heart by asking."
     ;;
     yes|y|*)
+      echo "Fuuu...siooonn. Ha!"
       ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout.xtc
-      echo "Life never looked brighter. Returning home."
-      homeMenu
     ;;
   esac
 }
@@ -480,13 +478,13 @@ autoRun() {
       # Set start time to end time + timestep
       inputB=$(echo $inputE + $inputTS | bc)
     fi
-
-
   done
 
   # Concatenate Parts and Return to Home Menu after input
-  concatParts
+  echo Y | concatParts
 
+  # Return Home
+  exit
 }
 
 homeMenu
