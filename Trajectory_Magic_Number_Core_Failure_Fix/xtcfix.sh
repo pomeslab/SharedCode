@@ -49,13 +49,15 @@ sf='_mpi' # suffix
 usage() {
   cat << EOF >&2
 Usage: $PROGNAME [-f <file>]
+Example: ./$PROGNAME trajectory.xtc
 
--f <file>:         ... (req) input trajectory file
--o <file>:         ... (opt) output trajectory file
--n <integer>:      ... (opt) part number
--l <file>:         ... (opt) log file (auto extract last time)
--x <integer float> ... (opt) time for 1 time step in picoseconds (ps)
--d <dir>:          ... (opt) directory for output files
+-f <file>          :... (req) input trajectory file
+-o <file>          :... (opt) output trajectory file
+-n <integer>       :... (opt) part number
+-l <file>          :... (opt) log file (auto extract last time)
+-x <integer float> :... (opt) time for 1 time step in picoseconds (ps)
+-d <dir>           :... (opt) directory for output files
+-h                 :... (opt) help (show usage)
 EOF
   exit 1
 }
@@ -69,7 +71,7 @@ inputTS=false # time for 1 time step (ps)
 D=XTCFIX # subdirectory for output files (optional)
 
 # Search for command line arguments
-while getopts f:o:n:l:x:d: o; do
+while getopts f:o:n:l:x:d:h: o; do
   case $o in
     (f) filein=$OPTARG;;
     (o) fileout=$OPTARG;;
@@ -77,6 +79,7 @@ while getopts f:o:n:l:x:d: o; do
     (l) logfile=$OPTARG;;
     (x) inputTS=$OPTARG;;
     (d) D=$OPTARG;;
+    (h) usage
     (*) usage
   esac
 done
@@ -90,6 +93,7 @@ numError=0 # starting value of the number of errors detected
 
 # Check for input trajectory file; exit if not found
 if [ $filein == false ]; then
+  usage
   echo "error: No [input trajectory] provided. (-f)"
   exit
 fi
@@ -114,7 +118,7 @@ fi
 if [ $logfile != false ]; then
   array=($(tail $logfile -n 200 | grep "Step.*Time.*Lambda" -A 1))
   # STEP (len-3), TIME (len-2), LAMBDA (len-1)
-  inputET=${test[${#test[@]}-2]}
+  inputET=${array[${#array[@]}-2]}
 fi
 
 # Create temporary working directory
@@ -147,14 +151,14 @@ homeMenu() {
 
   Option : Description
   ------------------------------------------------------------------------------
-  A      : automatically make all parts using valid times and prompt concatenation.
-  B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
-  E      : (-e) enter end time in ps only (uses start time: $inputB ps).
-  BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
-  S      : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
-  C      : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
-  Reset  : reset back to part 1 and delete old files created.
-  Exit   : exit the program.
+  A            : automatically make all parts using valid times and prompt concatenation.
+  B            : (-b) enter beginning/start time in ps only. No end time (-e) used.
+  E            : (-e) enter end time in ps only (uses start time: $inputB ps).
+  BE           : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
+  S            : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
+  C            : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
+  R/Reset      : reset back to part 1 and delete old files created.
+  Q/Exit/Quit  : exit the program.
 
   Please select an option.
   "
@@ -217,11 +221,11 @@ homeMenu() {
       # Concatenate the parts
       concatParts
     ;;
-    exit) echo ''
+    q|exit|quit) echo ''
       echo "Exiting the program. Good day to you too."
       exit
     ;;
-    reset) echo ''
+    r|reset) echo ''
       resetFix
       homeMenu
     ;;
@@ -401,7 +405,7 @@ autoRun() {
   inputE=0
   numError=1
 
-  if [ inputTS == false ]; then
+  if [ $inputTS == false ]; then
     echo "Enter the length of one timestep (ps):"
     read inputTS
     while ! [[ $inputTS =~ $re ]]; do
@@ -477,11 +481,9 @@ autoRun() {
 
   done
 
-  # Concatenate Parts
+  # Concatenate Parts and Return to Home Menu after input
   concatParts
 
-  # Return to home menu
-  homeMenu
 }
 
 homeMenu
