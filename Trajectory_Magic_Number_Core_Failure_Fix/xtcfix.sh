@@ -35,6 +35,11 @@
 #   recommendations on the next step.
 # Added autorun function (provide timestep length and final end time)
 #
+# -- 01/30/2018 -- Richard Banh
+# Added specific parameters to the script. Only required parameter is traj input.
+# Added an option to add a log file to extract the last end time and feed it
+#   to the automatic segmenter (A).
+# Removed some redundant code.
 #
 # Written by: Richard Banh on January 16, 2018
 
@@ -46,6 +51,7 @@ pf='' # prefix
 sf='_mpi' # suffix
 
 # Set up parameters for the script
+PROGNAME=$0
 usage() {
   cat << EOF >&2
 Usage: $PROGNAME [-f <file>]

@@ -21,7 +21,18 @@ sf='_mpi' # suffix (e.g. _s, _mpi, etc...)
 
 ## Example:
 ```
-./xtcfix.sh [trajectory] [trajectory out name] [part number (optional)]
+./xtcfix.sh
+
+Usage: /home/banhrich/xtcfix.sh [-f <file>]
+Example: .//home/banhrich/xtcfix.sh trajectory.xtc
+
+-f <file>          :... (req) input trajectory file
+-o <file>          :... (opt) output trajectory file
+-n <integer>       :... (opt) part number
+-l <file>          :... (opt) log file (auto extract last time)
+-x <integer float> :... (opt) time for 1 time step in picoseconds (ps)
+-d <dir>           :... (opt) directory for output files
+
 ./xtcfix.sh md.xtc product.xtc
 
   Option : Description
@@ -35,7 +46,7 @@ sf='_mpi' # suffix (e.g. _s, _mpi, etc...)
   Reset  : reset back to part 1 and delete old files created.
   Exit   : exit the program.
   Please select an option.
-  
+
 ```
 When using the program, test for start frames first with (B), then move onto end frames with (E). Once you've found the lower and upper bounds, save and continue to the next part.
 
@@ -49,8 +60,13 @@ When using the program, test for start frames first with (B), then move onto end
 4. Added integer check for count number.
 5. Added a reset feature.
 
--- 01/24/2018 -- Richard Banh
+-- 01/24/2018 --
 1. Included code to output ALL errors to a file and detect any magic number or core dump errors that occur. This is then used to provide the user recommendations on the next step.
-2. Added autorun function (provide timestep length and final end time)
+2. Added auto-run function (provide time step length and final end time)
+
+-- 01/30/2018 --
+1. Added specific parameters to the script. Only required parameter is a trajectory file (-f).
+2. Added an option to add a log file to extract the last end time and feed it to the auto-run function (A).
+3. Removed some redundant code.
 
 #### Written by: Richard Banh on January 16, 2018
