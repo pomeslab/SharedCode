@@ -378,6 +378,7 @@ taskRun() {
   # Output of the chosen task
   echo ""
   bash -c "${pf}trjconv${sf} -f $filein -o ${D}/part$count.$fileout $PARAMETERS; true" >& ${D}/temp 2> ${D}/temp1.txt
+  rm ${D}/temp
   echo "Output: end of file (below):"
   echo "----------------------------"
   tail -n 10 ${D}/temp1.txt
@@ -442,7 +443,7 @@ autoRun() {
         PARAMETERS="-b $inputB"
         taskRun &> /dev/null # obtain recommended end time
         inputE=$recE # set end time to recommended value
-        rm ${D}/part$count.$fileout ${D}/temp1.txt ${D}/temp2.txt ${D}/temp
+        rm ${D}/part$count.$fileout ${D}/temp1.txt ${D}/temp2.txt
       else
         # Update start time by adding user provided timestep
         inputB=$(echo $inputB + $inputTS | bc)
