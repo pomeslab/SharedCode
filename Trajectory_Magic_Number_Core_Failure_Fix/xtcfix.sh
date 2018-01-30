@@ -45,32 +45,85 @@ module load intel64/15.3.187 openmpi/1.10.0_intel15 gromacs64/4.6.7_ompi
 pf='' # prefix
 sf='_mpi' # suffix
 
-# Name of temporary directory
-D=XTCFIX
+# Set up parameters for the script
+usage() {
+  cat << EOF >&2
+Usage: $PROGNAME [-f <file>]
 
-# Parameters
-filein=$1 # input file
-fileout=${2:-trajectory.xtc} # output file
-count=${3:-1} # iteration number for part number (default value: 1)
+-f <file>:         ... (req) input trajectory file
+-o <file>:         ... (opt) output trajectory file
+-n <integer>:      ... (opt) part number
+-l <file>:         ... (opt) log file (auto extract last time)
+-x <integer float> ... (opt) time for 1 time step in picoseconds (ps)
+-d <dir>:          ... (opt) directory for output files
+EOF
+  exit 1
+}
+
+# Default Parameters
+filein=false # input file (required)
+fileout=trajectory.xtc # output file (optional)
+count=1 # iteration number for part number (optional))
+logfile=false # log file input (optional)
+inputTS=false # time for 1 time step (ps)
+D=XTCFIX # subdirectory for output files (optional)
+
+# Search for command line arguments
+while getopts f:o:n:l:x:d: o; do
+  case $o in
+    (f) filein=$OPTARG;;
+    (o) fileout=$OPTARG;;
+    (n) count=$OPTARG;;
+    (l) logfile=$OPTARG;;
+    (x) inputTS=$OPTARG;;
+    (d) D=$OPTARG;;
+    (*) usage
+  esac
+done
+
+# Other Variables
 inputB=0 # Beginning/Start Time (ps)
 inputE=0 # End Time (ps)
 recE=0 # recommendation for end frame (approximation)
 numError=0 # starting value of the number of errors detected
 
-# Create temporary working directory
-if [ ! -d ${D} ]; then
-    mkdir ${D}
+
+# Check for input trajectory file; exit if not found
+if [ $filein == false ]; then
+  echo "error: No [input trajectory] provided. (-f)"
+  exit
 fi
 
 # Check that the variable "count" is an integer
 re='^[0-9]+$'
 if ! [[ $count =~ $re ]] ; then
-   echo "error: The [part number] provided is not an integer"
-   exit
+  echo "error: The [part number] provided is not an integer. (-n)"
+  exit
+fi
+
+# Check that the variable "inputTS" is a number if it has been provided.
+if [ $inputTS != false ]; then
+  re='^[0-9]+([.][0-9]+)?$'
+  if ! [[ $inputTS =~ $re ]] ; then
+    echo "error: The [time step] provided is not an integer. (-x)"
+    exit
+  fi
+fi
+
+# Find the time of the last frame recorded in the log file if provided.
+if [ $logfile != false ]; then
+  array=($(tail $logfile -n 200 | grep "Step.*Time.*Lambda" -A 1))
+  # STEP (len-3), TIME (len-2), LAMBDA (len-1)
+  inputET=${test[${#test[@]}-2]}
+fi
+
+# Create temporary working directory
+if [ ! -d ${D} ]; then
+  mkdir ${D}
 fi
 
 # Check for integer + floats (-b and -e inputs)
-  re='^[0-9]+([.][0-9]+)?$'
+re='^[0-9]+([.][0-9]+)?$'
 
 # Print input info to the console
 inputInfo() {
@@ -348,21 +401,29 @@ autoRun() {
   inputE=0
   numError=1
 
-  echo "Enter the length of one timestep (ps):"
-  read inputTS
-  while ! [[ $inputTS =~ $re ]]; do
-      echo "[Timestep] You have not enetered a positive number.
-      Please try again."
-      read inputTS
-  done
+  if [ inputTS == false ]; then
+    echo "Enter the length of one timestep (ps):"
+    read inputTS
+    while ! [[ $inputTS =~ $re ]]; do
+        echo "[Timestep] You have not enetered a positive number.
+        Please try again."
+        read inputTS
+    done
+  else
+    echo "The time step enetered as a parameter will be used:      $inputTS ps."
+  fi
 
-  echo "Enter The Final End Time (ps):"
-  read inputET
-  while ! [[ $inputET =~ $re ]]; do
-      echo "[Final End Time] You have not enetered a positive number.
-      Please try again."
-      read inputET
-  done
+  if [ $logfile == false ]; then
+    echo "Enter The Final End Time (ps):"
+    read inputET
+    while ! [[ $inputET =~ $re ]]; do
+        echo "[Final End Time] You have not enetered a positive number.
+        Please try again."
+        read inputET
+    done
+  else
+    echo "The final end time provided by the log file will be used: $inputET ps"
+  fi
 
   # WHILE END TIME IS LESS THAN USER TRUE END TIME
   while [ $(echo "$inputE < $inputET" | bc) -ne 0 ] ; do
