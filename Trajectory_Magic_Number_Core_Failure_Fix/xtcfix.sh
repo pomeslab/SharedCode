@@ -35,7 +35,7 @@
 #   recommendations on the next step.
 # Added autorun function (provide timestep length and final end time)
 #
-# test
+# test2
 # Written by: Richard Banh on January 16, 2018
 
 # Load Gromacs
