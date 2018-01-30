@@ -57,7 +57,6 @@ Example: ./$PROGNAME trajectory.xtc
 -l <file>          :... (opt) log file (auto extract last time)
 -x <integer float> :... (opt) time for 1 time step in picoseconds (ps)
 -d <dir>           :... (opt) directory for output files
--h                 :... (opt) help (show usage)
 EOF
   exit 1
 }
@@ -71,7 +70,7 @@ inputTS=false # time for 1 time step (ps)
 D=XTCFIX # subdirectory for output files (optional)
 
 # Search for command line arguments
-while getopts f:o:n:l:x:d:h: o; do
+while getopts f:o:n:l:x:d: o; do
   case $o in
     (f) filein=$OPTARG;;
     (o) fileout=$OPTARG;;
@@ -79,8 +78,7 @@ while getopts f:o:n:l:x:d:h: o; do
     (l) logfile=$OPTARG;;
     (x) inputTS=$OPTARG;;
     (d) D=$OPTARG;;
-    (h) usage
-    (*) usage
+    (*) usage ;;
   esac
 done
 
@@ -93,9 +91,8 @@ numError=0 # starting value of the number of errors detected
 
 # Check for input trajectory file; exit if not found
 if [ $filein == false ]; then
-  usage
   echo "error: No [input trajectory] provided. (-f)"
-  exit
+  usage
 fi
 
 # Check that the variable "count" is an integer
