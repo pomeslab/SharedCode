@@ -369,7 +369,7 @@ concatParts() {
     ;;
     yes|y|*)
       echo "Fuuu...siooonn. Ha!"
-      ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout.xtc
+      ${pf}trjcat${sf} -f $(seq -f ${D}/part%g.$fileout 1 $((count-1))) -o ${D}/$fileout
     ;;
   esac
 }
@@ -431,7 +431,7 @@ autoRun() {
   fi
 
   # WHILE END TIME IS LESS THAN USER TRUE END TIME
-  while [ $(echo "$inputE < $inputET" | bc) -ne 0 ] ; do
+  while [ $(echo "$inputE < $inputET" | bc) -eq 1 ] ; do
     # Look for no errors for start time
     while ! [ $numError -eq 0 ]; do
       # Check valid B (using +ts)
@@ -442,16 +442,15 @@ autoRun() {
         PARAMETERS="-b $inputB"
         taskRun &> /dev/null # obtain recommended end time
         inputE=$recE # set end time to recommended value
+        rm ${D}/part$count.$fileout ${D}/temp1.txt ${D}/temp2.txt ${D}/temp
       else
         # Update start time by adding user provided timestep
         inputB=$(echo $inputB + $inputTS | bc)
       fi
     done
 
-    #inputInfo
-
     # Look for errors for end time (as long as end time is less than final end)
-    while [ $numError -eq 0 ] && [ $(echo "$inputE < $inputET" | bc) -ne 0 ]; do
+    while [ $numError -eq 0 ] && [ $(echo "$inputE < $inputET" | bc) -eq 1 ]; do
       # Check valid E (using +ts)
       PARAMETERS="-b $(echo $inputE - $inputTS | bc) -e $inputE"
       taskRun &> /dev/null # updates recE variable + obtain output files
