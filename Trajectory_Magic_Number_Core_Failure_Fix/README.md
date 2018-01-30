@@ -37,14 +37,14 @@ Example: .//home/banhrich/xtcfix.sh trajectory.xtc
 
   Option : Description
   ------------------------------------------------------------------------------
-  A      : automatically make all parts using valid times and concatenate them.
-  B      : (-b) enter beginning/start time in ps only. No end time (-e) used.
-  E      : (-e) enter end time in ps only (uses start time: $inputB ps).
-  BE     : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
-  S      : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
-  C      : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
-  Reset  : reset back to part 1 and delete old files created.
-  Exit   : exit the program.
+  A            : auto make all parts using valid times, concatenate, then exit
+  B            : (-b) enter beginning/start time in ps only. No end time (-e) used.
+  E            : (-e) enter end time in ps only (uses start time: $inputB ps).
+  BE           : (-b, -e) quickly enter beginning/start and end times in ps. & No trjconv.
+  S            : save the part as part$count.$fileout with (-b $inputB -e $inputE) & proceed to the next part.
+  C            : concatenate all parts (parts 1 to $((count-1))). Save as $fileout
+  R/Reset      : reset back to part 1 and delete old files created.
+  Q/Exit/Quit  : exit the program.
   Please select an option.
 
 ```
